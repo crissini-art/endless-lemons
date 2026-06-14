@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: grab;
+}
+
+canvas.dragging {
+    cursor: grabbing;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const img = new Image();
+img.src = "image.png";
+
+// Kamera
+let cameraX = 0;
+let cameraY = 0;
+
+// Offset zwischen den Tiles
+const TILE_OFFSET_X = 0; // jede nächste Zeile
+const TILE_OFFSET_Y = -50;  // jede nächste Spalte
+
+let dragging = false;
+let lastX = 0;
+let lastY = 0;
+
+function resize() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+
+window.addEventListener("resize", resize);
+resize();
+
+function mod(a, b) {
+    return ((a % b) + b) % b;
+}
+
+img.onload = () => {
+    const w = img.width;
+    const h = img.height;
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const stepX = w;
+        const stepY = h;
+
+        const rows =
+            Math.ceil(canvas.height / h) + 4;
+
+        const cols =
+            Math.ceil(canvas.width / w) + 4;
+
+        const startRow =
+            Math.floor(cameraY / h) - 2;
+
+        const startCol =
+            Math.floor(cameraX / w) - 2;
+
+        for (let row = startRow; row < startRow + rows; row++) {
+
+            const rowOffsetX = row * TILE_OFFSET_X;
+
+            for (let col = startCol; col < startCol + cols; col++) {
+
+                const colOffsetY = col * TILE_OFFSET_Y;
+
+                const x =
+                    col * stepX +
+                    rowOffsetX -
+                    cameraX;
+
+                const y =
+                    row * stepY +
+                    colOffsetY -
+                    cameraY;
+
+                ctx.drawImage(img, x, y);
+            }
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    render();
+};
+
+// Drag Navigation
+canvas.addEventListener("mousedown", e => {
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    canvas.classList.add("dragging");
+});
+
+window.addEventListener("mouseup", () => {
+    dragging = false;
+    canvas.classList.remove("dragging");
+});
+
+window.addEventListener("mousemove", e => {
+    if (!dragging) return;
+
+    cameraX -= e.clientX - lastX;
+    cameraY -= e.clientY - lastY;
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+});
+</script>
+
+</body>
+</html>
